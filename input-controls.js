@@ -1,4 +1,3 @@
-
 class InputController {
   constructor() {
     // This code was generated with the assistance of Gemini
@@ -62,8 +61,7 @@ class InputController {
     if (this.isStilled) return; // Do not render visual ripples when the surface is frozen
 
     push();
-    // [Non-course Core Technical Note]: Since the main painting utilizes an adaptive canvas scaling and centering system (Object-fit logic),
-    // absolute screen coordinates must be inversely re-mapped via translate() and scale() to guarantee perfect pixel alignment across various screen resolutions.
+    // Absolute screen coordinates must be inversely re-mapped via translate() and scale() to guarantee perfect pixel alignment across various screen resolutions.
     translate(offsetX, offsetY);
     scale(scaleFactor);
     
@@ -127,7 +125,7 @@ class InputController {
   }
 
   /**
-   * Physical Force Field Projection Method
+   * Mouse movement / click on the water surface interaction event (Simulates ripple waves pushing floating lily pads)
    * This code was generated with assistance from ChatGPT
    * Operation: Read active particles out of inputCtrl, calculate distances to vector sources, and compound direct repel collisions with wave-propagating thrusts
    * @param {Object} pad - The floating lily pad physics object to apply forces to
