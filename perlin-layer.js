@@ -16,9 +16,17 @@ let flowWater;
 let flowLayer;
 let flowZ = 0;
 let flowPhase = 0;
-let angleGrid = null;
 let flowDrops = [];
 let audioLevel = 0;
+
+let cosGrid = null;
+let sinGrid = null;
+
+let waterIdx = null;
+let waterGi = null;
+let waterPX = null;
+let waterPY = null;
+let waterCount = 0;
 
 function setupPerlinLayer() {
   flowLayer = createGraphics(ART_W, ART_H);
@@ -27,6 +35,10 @@ function setupPerlinLayer() {
   flowWater = createGraphics(WARP_RES, WARP_RES);
   flowWater.pixelDensity(1);
   flowWater.loadPixels();
+}
+
+function invalidateWaterField() {
+  waterIdx = null;
 }
 
 function drawPerlinLayer(artBox) {
@@ -43,96 +55,138 @@ function drawPerlinLayer(artBox) {
   return true;
 }
 
-function renderFlowingWater() {
-  flowZ += FLOW_SPEED;
-  flowPhase += FLOW_SCROLL * (1 + audioLevel * FLOW_SPEED_BOOST);
-
-  buildAngleGrid();
-
-  const phase0 = flowPhase - Math.floor(flowPhase);
-  const phase1 = (phase0 + 0.5) % 1;
-  const blend = Math.abs(1 - 2 * phase0);
+function precomputeWaterField() {
+  if (!paintingLayer || !paintingLayer.pixels || paintingLayer.pixels.length === 0) {
+    return;
+  }
 
   const sx = ART_W / WARP_RES;
   const sy = ART_H / WARP_RES;
   const src = paintingLayer.pixels;
   const dst = flowWater.pixels;
+  const gridSize = FLOW_FIELD_GRID;
+
+  const idx = [];
+  const gi = [];
+  const pxs = [];
+  const pys = [];
 
   for (let by = 0; by < WARP_RES; by++) {
+    const py = by * sy;
+    const oy = py < ART_H ? py | 0 : ART_H - 1;
+    let gy = ((py / ART_H) * gridSize) | 0;
+    gy = gy < 0 ? 0 : gy >= gridSize ? gridSize - 1 : gy;
+
     for (let bx = 0; bx < WARP_RES; bx++) {
       const px = bx * sx;
-      const py = by * sy;
-
       const ox = px < ART_W ? px | 0 : ART_W - 1;
-      const oy = py < ART_H ? py | 0 : ART_H - 1;
       const oi = 4 * (oy * ART_W + ox);
-      const or_ = src[oi];
-      const og = src[oi + 1];
-      const ob = src[oi + 2];
-
       const di = 4 * (by * WARP_RES + bx);
 
-      if (!onWater(or_, og, ob)) {
-        dst[di] = or_;
-        dst[di + 1] = og;
-        dst[di + 2] = ob;
+      const r = src[oi];
+      const g = src[oi + 1];
+      const b = src[oi + 2];
+
+      if (!onWater(r, g, b)) {
+        dst[di] = r;
+        dst[di + 1] = g;
+        dst[di + 2] = b;
         dst[di + 3] = 255;
         continue;
       }
 
-      const angle = sampleAngle(px, py);
-      const dx = Math.cos(angle);
-      const dy = Math.sin(angle);
+      let gx = ((px / ART_W) * gridSize) | 0;
+      gx = gx < 0 ? 0 : gx >= gridSize ? gridSize - 1 : gx;
 
-      let ax = (px - dx * FLOW_AMP * phase0) | 0;
-      let ay = (py - dy * FLOW_AMP * phase0) | 0;
-      ax = ax < 0 ? 0 : ax >= ART_W ? ART_W - 1 : ax;
-      ay = ay < 0 ? 0 : ay >= ART_H ? ART_H - 1 : ay;
-      const ai = 4 * (ay * ART_W + ax);
-
-      let bx2 = (px - dx * FLOW_AMP * phase1) | 0;
-      let by2 = (py - dy * FLOW_AMP * phase1) | 0;
-      bx2 = bx2 < 0 ? 0 : bx2 >= ART_W ? ART_W - 1 : bx2;
-      by2 = by2 < 0 ? 0 : by2 >= ART_H ? ART_H - 1 : by2;
-      const bi = 4 * (by2 * ART_W + bx2);
-
-      dst[di] = src[ai] + (src[bi] - src[ai]) * blend;
-      dst[di + 1] = src[ai + 1] + (src[bi + 1] - src[ai + 1]) * blend;
-      dst[di + 2] = src[ai + 2] + (src[bi + 2] - src[ai + 2]) * blend;
+      idx.push(di);
+      gi.push(gy * gridSize + gx);
+      pxs.push(px);
+      pys.push(py);
       dst[di + 3] = 255;
     }
+  }
+
+  waterCount = idx.length;
+  waterIdx = Int32Array.from(idx);
+  waterGi = Int32Array.from(gi);
+  waterPX = Float32Array.from(pxs);
+  waterPY = Float32Array.from(pys);
+}
+
+function renderFlowingWater() {
+  if (waterIdx === null) {
+    precomputeWaterField();
+    if (waterIdx === null) return;
+  }
+
+  flowZ += FLOW_SPEED;
+  flowPhase += FLOW_SCROLL * (1 + audioLevel * FLOW_SPEED_BOOST);
+
+  buildFlowGrid();
+
+  const phase0 = flowPhase - Math.floor(flowPhase);
+  const phase1 = (phase0 + 0.5) % 1;
+  const blend = Math.abs(1 - 2 * phase0);
+  const ampP0 = FLOW_AMP * phase0;
+  const ampP1 = FLOW_AMP * phase1;
+
+  const src = paintingLayer.pixels;
+  const dst = flowWater.pixels;
+  const W = ART_W;
+  const H = ART_H;
+
+  for (let k = 0; k < waterCount; k++) {
+    const di = waterIdx[k];
+    const gIndex = waterGi[k];
+    const px = waterPX[k];
+    const py = waterPY[k];
+    const dx = cosGrid[gIndex];
+    const dy = sinGrid[gIndex];
+
+    let ax = (px - dx * ampP0) | 0;
+    let ay = (py - dy * ampP0) | 0;
+    ax = ax < 0 ? 0 : ax >= W ? W - 1 : ax;
+    ay = ay < 0 ? 0 : ay >= H ? H - 1 : ay;
+    const ai = 4 * (ay * W + ax);
+
+    let bx2 = (px - dx * ampP1) | 0;
+    let by2 = (py - dy * ampP1) | 0;
+    bx2 = bx2 < 0 ? 0 : bx2 >= W ? W - 1 : bx2;
+    by2 = by2 < 0 ? 0 : by2 >= H ? H - 1 : by2;
+    const bi = 4 * (by2 * W + bx2);
+
+    dst[di] = src[ai] + (src[bi] - src[ai]) * blend;
+    dst[di + 1] = src[ai + 1] + (src[bi + 1] - src[ai + 1]) * blend;
+    dst[di + 2] = src[ai + 2] + (src[bi + 2] - src[ai + 2]) * blend;
   }
 
   flowWater.updatePixels();
 }
 
-function buildAngleGrid() {
+function buildFlowGrid() {
   const gridSize = FLOW_FIELD_GRID;
-  if (!angleGrid) {
-    angleGrid = new Float32Array(gridSize * gridSize);
+  const n = gridSize * gridSize;
+  if (!cosGrid) {
+    cosGrid = new Float32Array(n);
+    sinGrid = new Float32Array(n);
   }
 
   for (let gy = 0; gy < gridSize; gy++) {
     for (let gx = 0; gx < gridSize; gx++) {
       const x = ((gx + 0.5) / gridSize) * ART_W;
       const y = ((gy + 0.5) / gridSize) * ART_H;
-      angleGrid[gy * gridSize + gx] = flowValue(x, y) * TWO_PI * 2;
+      const a = flowValue(x, y) * TWO_PI * 2;
+      const i = gy * gridSize + gx;
+      cosGrid[i] = Math.cos(a);
+      sinGrid[i] = Math.sin(a);
     }
   }
 }
 
-function sampleAngle(px, py) {
-  const gridSize = FLOW_FIELD_GRID;
-  let gx = ((px / ART_W) * gridSize) | 0;
-  let gy = ((py / ART_H) * gridSize) | 0;
-  gx = gx < 0 ? 0 : gx >= gridSize ? gridSize - 1 : gx;
-  gy = gy < 0 ? 0 : gy >= gridSize ? gridSize - 1 : gy;
-  return angleGrid[gy * gridSize + gx];
-}
-
 function updateFlowLayer() {
   if (typeof audioState !== "undefined") {
-    audioLevel = audioState.smoothedLevel;
+    const lvl = audioState.smoothedLevel;
+    audioLevel = Number.isFinite(lvl) ? lvl : 0;
   } else {
     audioLevel = constrain(map(mouseY, height, 0, 0, 1), 0, 1);
   }
