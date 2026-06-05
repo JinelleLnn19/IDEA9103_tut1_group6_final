@@ -3,7 +3,7 @@
 // with two-tap flowmap blending so the looping motion has no visible seam.
 // A second buffer holds the fading trails and the raindrop ripples.
 //
-// Comment convention: lines/blocks tagged "AI-assisted" mark code where AI
+// Comment convention: lines/blocks tagged "AI-assisted" mark code where AI(claude)
 // helped (the performance pass — precomputed water mask + cos/sin lookup
 // tables). Untagged code and comments are my own work.
 
