@@ -1,3 +1,4 @@
+
 class InputController {
   constructor() {
     // This code was generated with the assistance of Gemini
@@ -123,6 +124,42 @@ class InputController {
       strokeW: 2.8,                // Thicker stroke weight to convey a sense of physical weight and mass impact
       impact: 1.85                 // Strong physical impact force for substantial pixel displacement deformation
     });
+  }
+
+  /**
+   * Physical Force Field Projection Method
+   * This code was generated with assistance from ChatGPT
+   * Operation: Read active particles out of inputCtrl, calculate distances to vector sources, and compound direct repel collisions with wave-propagating thrusts
+   * @param {Object} pad - The floating lily pad physics object to apply forces to
+   */
+  applyInputForcesToFloatingPad(pad) {
+    if (this.ripples.length === 0) return;
+
+    for (let ripple of this.ripples) {
+      const dx = pad.x - ripple.x;
+      const dy = pad.y - ripple.y;
+      const dist = sqrt(dx * dx + dy * dy);
+      if (dist <= 0.001) continue; // Prevent mathematical divide-by-zero exceptions
+
+      const nx = dx / dist; // X component of normal unit vector
+      const ny = dy / dist; // Y component of normal unit vector
+      
+      const directRange = pad.radius * 1.25 + 42;                    // Proximity radius for direct mouse stroke repulsion
+      const waveRange = pad.radius + this.triggerRadius * 0.72; // Proximity radius for outward sinusoidal wave push
+      
+      const directHit = max(0, 1 - dist / directRange);              // Linear distance decay model
+      const waveHit = max(0, 1 - abs(dist - ripple.radius) / waveRange); // Gaussian scaling model matching wave peak alignment
+      
+      // Extract dynamic impact multipliers from the active ripple state
+      const ripplePower = (ripple.alpha / 255) * (ripple.impact || 1);
+      const force = directHit * ripplePower * 0.42 + waveHit * ripplePower * 0.22; // Blend synchronized concurrent forces
+
+      if (force > 0) {
+        pad.vx += nx * force;          // Impulse injection: Modify linear horizontal momentum
+        pad.vy += ny * force * 0.78;   // Impulse injection: Modify linear vertical momentum (attenuated for water surface perspective projection)
+        pad.angularV += (nx * 0.7 + ny * 0.3) * force * 0.009; // Torque injection: Generate rotational skew due to uneven forces
+      }
+    }
   }
 
   /**
