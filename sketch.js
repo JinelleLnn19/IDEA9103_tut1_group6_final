@@ -2,19 +2,19 @@ const ART_W = 1000;          // Fixed physical width of the core artistic creati
 const ART_H = 1000;          // Fixed physical height of the core artistic creation space
 const SEED = 1916;           // Pseudo-random seed (Tribute to the year Monet began his grand "Water Lilies" murals)
 const BRUSH_SCALE = 0.68;    // Global base scaling factor for oil brush strokes
-
+ 
 let paintingLayer;           // p5.Graphics object: Used for one-time off-screen pre-rendering of the static oil painting
 let interactiveBuffer;       // p5.Graphics object: Used to compute, refresh, and cache real-time frames under fluid distortion
 let inputCtrl;               // Interaction controller instance: Hosts the input systems from input-controls.js
 let floatingLilyPads = [];   // Dynamic array: Stores individual floating lily pads with independent drift and collision logic
-
+ 
 function preload() {
   // Operation: Checks and preloads external audio mechanics to prevent runtime asynchronous blocking
   if (typeof preloadAudioMechanic === 'function') {
     preloadAudioMechanic();
   }
 }
-
+ 
 function setup() {
   pixelDensity(1);           // Force pixel density to 1 to prevent indexing overflows or lag on high-DPI (Retina) screens
   createCanvas(windowWidth, windowHeight); // Create a responsive global canvas covering the full viewport
@@ -22,7 +22,7 @@ function setup() {
   // This code was generated with assistance from ChatGPT
   // Operation: Instantiate the global InputController across files to capture and manage global input states
   inputCtrl = new window.InputController();
-
+ 
   // Operation: Execute the full oil painting rendering pipeline
   buildPainting();           // Run the base map generation algorithm
   paintingLayer.loadPixels(); // Extract raw RGBA pixel array of the static painting for subsequent distortion algorithms
@@ -31,7 +31,7 @@ function setup() {
   // Operation: Initialize the interactive graphic buffer layer, aligning its underlying pixel format with the main canvas
   interactiveBuffer = createGraphics(ART_W, ART_H);
   interactiveBuffer.pixelDensity(1);
-
+ 
   // Course extension module hook detection
   if (typeof setupPerlinLayer === 'function') {
     setupPerlinLayer();
@@ -40,10 +40,10 @@ function setup() {
     setupAudioMechanic();
   }
 }
-
+ 
 function draw() {
   background(24, 34, 42); // Render a dark grey-blue background reminiscent of a Monet exhibition gallery mood
-
+ 
   // --- Responsive Layout Adaption (Simulating CSS Object-fit: cover logic) ---
   // This code was generated with assistance from ChatGPT
   // Operation: Calculate the aspect ratio scale factor to center-crop and fill the viewport, ensuring the artwork does not stretch
@@ -52,13 +52,13 @@ function draw() {
   const drawH = ART_H * scaleFactor;
   const offsetX = (width - drawW) * 0.5;
   const offsetY = (height - drawH) * 0.5;
-
+ 
   inputCtrl.update(); // Step forward and update key presses and particle lifetime decay logic
-
+ 
   if (typeof updateAudioMechanic === 'function') {
     updateAudioMechanic();
   }
-
+ 
   // Calculate the remapped relative coordinates of the current mouse position within the original 1000x1000 creative space
   const renderMouseX = (mouseX - offsetX) / scaleFactor;
   const renderMouseY = (mouseY - offsetY) / scaleFactor;
@@ -66,7 +66,7 @@ function draw() {
   /** @type {{x: number, y: number, w: number, h: number}} Encapsulates the actual screen viewport boundaries of the artwork */
   const artBox = { x: offsetX, y: offsetY, w: drawW, h: drawH }; 
   let perlinLayerDrawn = false;
-
+ 
   // --- Rendering Pipeline Routing ---
   // This code was generated with assistance from ChatGPT
   // Operation: Optimize rendering overhead. If the spacebar is held to freeze the simulation or if there are no active 
@@ -80,7 +80,7 @@ function draw() {
     } else if (typeof drawPerlinLayer === 'function') {
       perlinLayerDrawn = drawPerlinLayer(artBox);
     }
-
+ 
     if (!inputCtrl.isStilled && !perlinLayerDrawn) {
       image(paintingLayer, offsetX, offsetY, drawW, drawH);
     }
@@ -89,27 +89,27 @@ function draw() {
     // Operation: When active interaction ripples exist, activate the underlying fluid physics engine, refresh the pixel deformation buffer, and draw
     applyWaterRipplePhysics(renderMouseX, renderMouseY);
     image(interactiveBuffer, offsetX, offsetY, drawW, drawH);
-
+ 
     if (typeof drawPerlinLayer === 'function') {
       drawPerlinLayer(artBox);
     }
   }
-
+ 
   // Operation: Update physics drift and render top-layer dynamic floating lily pads independently from the underlying pixel distortion
   updateFloatingLilyPads();
   drawFloatingLilyPads(artBox);
-
+ 
   if (typeof drawTimeBasedMechanic === 'function') {
     drawTimeBasedMechanic(artBox);
   }
   if (typeof drawAudioLayer === 'function') {
     drawAudioLayer();
   }
-
+ 
   // Operation: Pass the current canvas context and coordinate offsets across files to overlay smooth, semi-transparent light blue visual ripple lines
   inputCtrl.displayRipples(interactiveBuffer, scaleFactor, offsetX, offsetY);
 }
-
+ 
 /**
  * Underlying Fluid Simulation Core Algorithm: Inverse Pixel Lookup Mapping & Temporal Color Filtering
  * [Outside-of-Course Technique Description]: This method utilizes advanced pixel-level matrix manipulation (Direct Pixel Manipulation).
@@ -123,19 +123,19 @@ function draw() {
 function applyWaterRipplePhysics(mx, my) {
   paintingLayer.loadPixels();
   interactiveBuffer.loadPixels(); // Activate the underlying pixel writing pipeline for the target graphic layer
-
+ 
   for (let y = 0; y < ART_H; y += 1) {
     for (let x = 0; x < ART_W; x += 1) {
       let xOffset = 0;
       let yOffset = 0;
-
+ 
       // This code was generated with assistance from ChatGPT
       // Operation: Loop through all active ripples from inputCtrl to calculate the accumulated water wave disturbance forces on the current pixel
       for (let r of inputCtrl.ripples) {
         let dx = x - r.x;
         let dy = y - r.y;
         let dist = Math.sqrt(dx * dx + dy * dy); // Apply Pythagorean theorem to calculate the absolute Euclidean distance from pixel to ripple center
-
+ 
         // If the current pixel is within the threshold of this ripple's expanding wave peak radius, apply physical wave deformation
         if (dist > 0 && Math.abs(dist - r.radius) < inputCtrl.triggerRadius) {
           // Compute local thrust intensity based on cosine/sine periodicity combined with the ripple particle's current alpha (energy decay)
@@ -144,19 +144,19 @@ function applyWaterRipplePhysics(mx, my) {
           yOffset += (dy / dist) * strength; // Accumulate Y-axis displacement along the radial normal direction
         }
       }
-
+ 
       // Restrict lookup boundaries to prevent sampling outside the 1000x1000 range, which causes memory pointer out-of-bounds errors
       let targetX = constrain(Math.floor(x + xOffset), 0, ART_W - 1);
       let targetY = constrain(Math.floor(y + yOffset), 0, ART_H - 1);
-
+ 
       // Calculate the 4-byte (RGBA) base index offsets in the one-dimensional flat pixels array for both source (src) and destination (dest) images
       let srcIdx = 4 * (targetY * ART_W + targetX);
       let destIdx = 4 * (y * ART_W + x);
-
+ 
       let rColor = paintingLayer.pixels[srcIdx];
       let gColor = paintingLayer.pixels[srcIdx + 1];
       let bColor = paintingLayer.pixels[srcIdx + 2];
-
+ 
       // This code was generated with assistance from ChatGPT
       // Operation: Read the dynamically updated temporal state (currentPalette) to apply dynamic pixel filter transformations
       if (inputCtrl.currentPalette === 1) {
@@ -169,7 +169,7 @@ function applyWaterRipplePhysics(mx, my) {
         gColor = constrain(gColor * 0.95 + 10, 0, 255);
         bColor = constrain(bColor * 0.75, 0, 255);
       }
-
+ 
       // Write the final resolved color data back into the interactive graphic buffer memory
       interactiveBuffer.pixels[destIdx] = rColor;
       interactiveBuffer.pixels[destIdx + 1] = gColor;
@@ -179,11 +179,11 @@ function applyWaterRipplePhysics(mx, my) {
   }
   interactiveBuffer.updatePixels(); // Batch-push the computed pixel matrix back to video memory for real-time rendering
 }
-
+ 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight); // Responsively reset the viewport when the host browser window dimensions abruptly change
 }
-
+ 
 function mouseMoved() {
   if (!inputCtrl) return;
   const scaleFactor = max(width / ART_W, height / ART_H);
@@ -191,7 +191,7 @@ function mouseMoved() {
   const my = (mouseY - (height - ART_H * scaleFactor) * 0.5) / scaleFactor;
   inputCtrl.handleMouseMoved(mx, my); // Pass transformed canvas coordinates into the controller to update micro-ripples
 }
-
+ 
 function mousePressed() {
   if (!inputCtrl) return;
   const scaleFactor = max(width / ART_W, height / ART_H);
@@ -199,11 +199,11 @@ function mousePressed() {
   const my = (mouseY - (height - ART_H * scaleFactor) * 0.5) / scaleFactor;
   inputCtrl.handleMousePressed(mx, my); // Pass transformed canvas coordinates into the controller to trigger intense ripples
 }
-
+ 
 function keyPressed() {
   if (inputCtrl) inputCtrl.handleKeyPressed(); // Route and distribute single key press events
 }
-
+ 
 /**
  * Core Generative Art Module: Impressionist Algorithmic Oil Painting Pipeline
  * Operation: Adheres to a layered rendering aesthetic, synthesizing everything from macro water backgrounds and irregular 
@@ -212,12 +212,12 @@ function keyPressed() {
 function buildPainting() {
   randomSeed(SEED);
   noiseSeed(SEED); // Anchor the random number generator's path to ensure identical visual composition on every load
-
+ 
   paintingLayer = createGraphics(ART_W, ART_H);
   paintingLayer.pixelDensity(1);
   paintingLayer.colorMode(RGB, 255);
   paintingLayer.noStroke();
-
+ 
   // --- Classical Impressionist Multi-Layer Coloring Process ---
   paintWaterBase();       // Step 1: Horizontally scan underlying deep water body and blended base color strokes
   paintReflections();     // Step 2: Generate vertically swaying green reflections of riverside willows and bright short strokes
@@ -229,19 +229,19 @@ function buildPainting() {
   paintPadCluster(250, 410, 250, 120, 21, 0.78);  // Mid-ground left cluster
   paintPadCluster(690, 300, 315, 105, 25, 0.72);  // Distant mid-ground right cluster
   paintPadCluster(560, 680, 135, 85, 10, 0.68);   // Center-bottom scattered transition cluster
-
+ 
   paintLilies();          // Step 5: Precisely draw multi-layered, blooming physical lily flowers directly over designated leaf clusters
   paintFineColorNotes();  // Step 6: Add Pointillism-style high-contrast ambient highlights and short accent strokes
   paintSurfaceStrokes();  // Step 7: Overlay surface-level short, fragmented water reflection strokes
   paintCanvasGrain();     // Step 8: Synthesize physical texture grids of linen canvas, adding a dark protective bounding border
 }
-
+ 
 function paintWaterBase() {
   const skyBlue = color(72, 94, 146);
   const pondGreen = color(67, 95, 70);
   const violet = color(87, 83, 143);
   const shadow = color(42, 51, 74);
-
+ 
   // Render horizontal gradient water base
   for (let y = 0; y < ART_H; y += 2) {
     const t = y / ART_H;
@@ -255,7 +255,7 @@ function paintWaterBase() {
     paintingLayer.strokeWeight(3);
     paintingLayer.line(0, y, ART_W, y + random(-1, 1));
   }
-
+ 
   // Cover large areas with broad, coarse oil paint blending strokes of varying lengths
   for (let i = 0; i < 1550; i++) {
     const x = random(ART_W);
@@ -271,20 +271,20 @@ function paintWaterBase() {
     );
   }
 }
-
+ 
 function paintReflections() {
   const reflectionColors = [
     color(54, 91, 68, 90), color(79, 112, 80, 80), color(89, 106, 162, 85),
     color(48, 67, 95, 80), color(105, 96, 158, 55)
   ];
-
+ 
   // Render Monet's signature vertical weeping willow wind reflections
   for (let i = 0; i < 280; i++) {
     const x = random(-60, ART_W + 60);
     const y = random(40, ART_H - 55);
     const h = random(85, 270);
     const c = random(reflectionColors);
-
+ 
     paintingLayer.noFill();
     paintingLayer.stroke(c);
     paintingLayer.strokeWeight(random(5, 18));
@@ -296,14 +296,14 @@ function paintReflections() {
     }
     paintingLayer.endShape();
   }
-
+ 
   // Lay down transition ripple strokes
   for (let i = 0; i < 620; i++) {
     const c = random([color(35, 45, 72, 100), color(120, 139, 177, 80), color(117, 139, 119, 65)]);
     oilyStroke(paintingLayer, random(ART_W), random(ART_H), random(16, 120), random(3, 13), c, random(-0.06, 0.06), random(0.35, 0.8));
   }
 }
-
+ 
 function paintDistantPads() {
   for (let i = 0; i < 82; i++) {
     const band = random([150, 235, 365, 530, 860]); // Discrete band stratification to simulate perspective horizon lines
@@ -312,7 +312,7 @@ function paintDistantPads() {
     paintLilyPad(x, y, random(28, 76), random(10, 30), random(TWO_PI), random(0.42, 0.68));
   }
 }
-
+ 
 function paintPadCluster(cx, cy, clusterW, clusterH, count, sizeScale) {
   for (let i = 0; i < count; i++) {
     const angle = random(TWO_PI);
@@ -324,11 +324,11 @@ function paintPadCluster(cx, cy, clusterW, clusterH, count, sizeScale) {
     paintLilyPad(x, y, w, h, random(TWO_PI), random(0.75, 1.18));
   }
 }
-
+ 
 function paintLilyPad(x, y, w, h, angle, alphaScale) {
   drawLilyPadTo(paintingLayer, x, y, w, h, angle, alphaScale);
 }
-
+ 
 /**
  * Fundamental Component Algorithm: Reusable Impressionist Oil Painting Lily Pad Synthesis
  * Operation: Overlays multiple color layers (shadows, base tones, rim highlights) on the specified target graphic panel 
@@ -340,15 +340,15 @@ function drawLilyPadTo(g, x, y, w, h, angle, alphaScale) {
     color(154, 171, 108, 135 * alphaScale), color(91, 128, 112, 145 * alphaScale),
     color(168, 124, 164, 80 * alphaScale)
   ];
-
+ 
   g.push();
   g.translate(x, y);
   g.rotate(angle);
-
+ 
   // 1. Render a heavy underwater base oil shadow stroke with a semi-transparent dark blue tint shifted down-right
   const shadow = color(24, 37, 62, 125 * alphaScale);
   oilyStroke(g, 4, 7, w * 1.08, h * 1.15, shadow, 0, 0.75);
-
+ 
   // 2. Loop and randomly select colors to overlay, painting a rich localized organic green base layer with high-cohesion strokes
   for (let i = 0; i < 10; i++) {
     const c = random(greens);
@@ -358,19 +358,19 @@ function drawLilyPadTo(g, x, y, w, h, angle, alphaScale) {
       random(-0.1, 0.1), random(0.5, 1)
     );
   }
-
+ 
   // 3. Dot the center area with withered or ambient pinkish-purple reflective details and variegated color blocks
   for (let i = 0; i < 3; i++) {
     const fleck = random([color(187, 205, 156, 115), color(87, 144, 132, 110), color(211, 159, 193, 80)]);
     oilyStroke(g, random(-w * 0.28, w * 0.28), random(-h * 0.25, h * 0.25), w * random(0.16, 0.42), h * random(0.12, 0.32), fleck, random(-0.25, 0.25), random(0.45, 0.8));
   }
-
+ 
   // 4. Append bright, curved rim light oil strokes along the side to define the turned-up edges and volumetric form of the leaf
   const rim = random([color(202, 153, 188, 120), color(173, 197, 163, 105), color(211, 205, 151, 90)]);
   oilyStroke(g, 0, -h * 0.15, w * random(0.75, 1.1), h * 0.18, rim, random(-0.12, 0.12), 0.65);
   g.pop();
 }
-
+ 
 /**
  * Top-Level Dynamic Physical Layer: Off-Screen Independent Sprite Cache Initialization
  * [Outside-of-Course Technique Description]: To achieve high-framerate floating physics and soft oscillations for the 
@@ -383,19 +383,19 @@ function drawLilyPadTo(g, x, y, w, h, angle, alphaScale) {
 function createFloatingLilyPads() {
   floatingLilyPads = [];
   randomSeed(SEED + 371); // Shift to an independent seed space to ensure floating elements look distinct from static ones
-
+ 
   for (let i = 0; i < 34; i++) {
     const band = random([150, 235, 365, 530, 860]);
     addFloatingLilyPad(random(30, ART_W - 30), band + random(-55, 55), random(28, 76), random(10, 30), random(TWO_PI), random(0.32, 0.5));
   }
-
+ 
   addFloatingPadCluster(190, 760, 235, 120, 10, 0.82);
   addFloatingPadCluster(760, 765, 275, 140, 12, 0.9);
   addFloatingPadCluster(250, 410, 250, 120, 9, 0.72);
   addFloatingPadCluster(690, 300, 315, 105, 10, 0.68);
   addFloatingPadCluster(560, 680, 135, 85, 5, 0.64);
 }
-
+ 
 function addFloatingPadCluster(cx, cy, clusterW, clusterH, count, sizeScale) {
   for (let i = 0; i < count; i++) {
     const angle = random(TWO_PI);
@@ -405,7 +405,7 @@ function addFloatingPadCluster(cx, cy, clusterW, clusterH, count, sizeScale) {
     addFloatingLilyPad(x, y, random(48, 125) * sizeScale, random(22, 58) * sizeScale, random(TWO_PI), random(0.56, 0.9));
   }
 }
-
+ 
 function addFloatingLilyPad(x, y, w, h, angle, alphaScale) {
   const seed = floor(random(1000000));
   const margin = ceil(max(w, h) * 0.8);
@@ -415,10 +415,10 @@ function addFloatingLilyPad(x, y, w, h, angle, alphaScale) {
   sprite.pixelDensity(1);
   sprite.colorMode(RGB, 255);
   sprite.clear(); // Keep background entirely empty and transparent
-
+ 
   randomSeed(seed);
   drawLilyPadTo(sprite, spriteW * 0.5, spriteH * 0.5, w, h, 0, alphaScale); // Bake static procedural strokes directly inside the sprite frame
-
+ 
   // This code was generated with assistance from ChatGPT
   // Operation: Push the dynamic entity into the physics pool, configuring motion metrics and caching pointers to its baked sprite texture
   floatingLilyPads.push({
@@ -431,16 +431,16 @@ function addFloatingLilyPad(x, y, w, h, angle, alphaScale) {
     sprite                      // Pointer to texture asset data
   });
 }
-
+ 
 /**
  * Physics Engine Step Solver: Autonomous Momentum, Hooke's Elastic Restoration Tendencies, & State Routing
  */
 function updateFloatingLilyPads() {
   if (floatingLilyPads.length === 0) return;
-
+ 
   const stillness = inputCtrl && inputCtrl.isStilled;
   const soundLift = typeof audioState !== "undefined" ? audioState.smoothedLevel : 0; // Check volume level feedback from external audio response systems
-
+ 
   // This code was generated with assistance from ChatGPT
   // Operation: Loop through all instances, toggling motion models based on the InputController's global state machine
   for (let pad of floatingLilyPads) {
@@ -456,7 +456,7 @@ function updateFloatingLilyPads() {
       pad.vx += cos(flowAngle) * driftPower + (pad.baseX - pad.x) * 0.0014;
       pad.vy += sin(flowAngle) * driftPower * 0.72 + (pad.baseY - pad.y) * 0.0014;
       pad.angularV += sin(frameCount * 0.01 + pad.phase) * 0.00018; // Feeble self-rotation
-      applyInputForcesToFloatingPad(pad); // Superimpose impact impulses caused by interactive user actions
+      inputCtrl.applyInputForcesToFloatingPad(pad); // Superimpose impact impulses caused by interactive user actions
     } else {
       // Mode B: Static Return Mode. Instantly triggered by holding spacebar; current speeds dissolve, and forces shift 
       // to high-tension Hooke constants, snapping the items back to their native spawn points.
@@ -465,10 +465,10 @@ function updateFloatingLilyPads() {
       pad.angularV *= 0.92;
     }
   }
-
+ 
   // Operation: Call the rigid contact intersection resolver to fix overlapping stack artifacts
   resolveFloatingLilyPadCollisions();
-
+ 
   // Final velocity integration & physical workspace constraints
   for (let pad of floatingLilyPads) {
     pad.vx *= 0.94; // Kinetic friction damping (retains 94% velocity per frame) to prevent chaotic infinite oscillations from rounding errors
@@ -479,42 +479,8 @@ function updateFloatingLilyPads() {
     pad.angle += pad.angularV; // Apply angular velocity updates to the heading angle
   }
 }
-
-/**
- * Physical Force Field Projection Method
- * This code was generated with assistance from ChatGPT
- * Operation: Read active particles out of inputCtrl, calculate distances to vector sources, and compound direct repel collisions with wave-propagating thrusts
- */
-function applyInputForcesToFloatingPad(pad) {
-  if (!inputCtrl || inputCtrl.ripples.length === 0) return;
-
-  for (let ripple of inputCtrl.ripples) {
-    const dx = pad.x - ripple.x;
-    const dy = pad.y - ripple.y;
-    const dist = sqrt(dx * dx + dy * dy);
-    if (dist <= 0.001) continue; // Prevent mathematical divide-by-zero exceptions
-
-    const nx = dx / dist; // X component of normal unit vector
-    const ny = dy / dist; // Y component of normal unit vector
-    
-    const directRange = pad.radius * 1.25 + 42;                    // Proximity radius for direct mouse stroke repulsion
-    const waveRange = pad.radius + inputCtrl.triggerRadius * 0.72; // Proximity radius for outward sinusoidal wave push
-    
-    const directHit = max(0, 1 - dist / directRange);              // Linear distance decay model
-    const waveHit = max(0, 1 - abs(dist - ripple.radius) / waveRange); // Gaussian scaling model matching wave peak alignment
-    
-    // Extract dynamic impact multipliers from the active ripple state
-    const ripplePower = (ripple.alpha / 255) * (ripple.impact || 1);
-    const force = directHit * ripplePower * 0.42 + waveHit * ripplePower * 0.22; // Blend synchronized concurrent forces
-
-    if (force > 0) {
-      pad.vx += nx * force;          // Impulse injection: Modify linear horizontal momentum
-      pad.vy += ny * force * 0.78;   // Impulse injection: Modify linear vertical momentum (attenuated for water surface perspective projection)
-      pad.angularV += (nx * 0.7 + ny * 0.3) * force * 0.009; // Torque injection: Generate rotational skew due to uneven forces
-    }
-  }
-}
-
+ 
+ 
 /**
  * 2D Circular Rigid Body Collision Solver (Relaxation-based Collision Resolution)
  * This code was generated with assistance from ChatGPT
@@ -534,7 +500,7 @@ function resolveFloatingLilyPadCollisions() {
       const activeBoost = inputCtrl && inputCtrl.ripples.length > 0 ? 0.12 : 0;
       const minDist = (a.radius + b.radius) * (0.72 + activeBoost);
       const distSq = dx * dx + dy * dy;
-
+ 
       // If a physical overlapping intersection occurs
       if (distSq > 0.001 && distSq < minDist * minDist) {
         const dist = sqrt(distSq);
@@ -557,7 +523,7 @@ function resolveFloatingLilyPadCollisions() {
     }
   }
 }
-
+ 
 /**
  * Dynamic Floating Layer Rendering Routine
  * Operation: Restore the remapped master viewport space, step through the physics pool, simulate faint floating bobbing via 
@@ -565,7 +531,7 @@ function resolveFloatingLilyPadCollisions() {
  */
 function drawFloatingLilyPads(artBox) {
   if (floatingLilyPads.length === 0) return;
-
+ 
   push();
   translate(artBox.x, artBox.y);
   scale(artBox.w / ART_W, artBox.h / ART_H); // Align coordinates with current scaling viewport fractions
@@ -574,23 +540,23 @@ function drawFloatingLilyPads(artBox) {
   // Increase global opacity during active interaction states to simulate reduced water reflectivity under surface agitation
   const activeAlpha = inputCtrl && inputCtrl.ripples.length > 0 ? 232 : 188;
   tint(255, activeAlpha);
-
+ 
   for (let pad of floatingLilyPads) {
     // Utilize orthogonal harmonic sine formulas to generate gentle breathing/bobbing offsets along unique phase cycles
     const bobX = sin(frameCount * 0.012 + pad.phase) * 1.8;
     const bobY = cos(frameCount * 0.014 + pad.phase) * 1.2;
-
+ 
     push();
     translate(pad.x + bobX, pad.y + bobY);
     rotate(pad.angle + sin(frameCount * 0.01 + pad.phase) * 0.025); // Overlay subtle pitching shakes induced by the bobbing motion
     image(pad.sprite, 0, 0); // Render pre-baked off-screen sprite texture
     pop();
   }
-
+ 
   noTint();
   pop();
 }
-
+ 
 function paintLilies() {
   // Hardcoded coordinate mapping sequences matching positions from Monet's original canvas: [X, Y, size scale, base petal hue]
   const flowers = [
@@ -603,18 +569,18 @@ function paintLilies() {
     [610, 705, 0.74, color(231, 198, 154)], // Solitary light yellow lily lower center
     [850, 830, 1.08, color(236, 218, 179)]  // Large full blossom bottom right background
   ];
-
+ 
   flowers.forEach((flower) => paintFlower(flower[0], flower[1], flower[2], flower[3]));
 }
-
+ 
 function paintFlower(x, y, scaleAmount, baseColor) {
   paintingLayer.push();
   paintingLayer.translate(x, y);
   paintingLayer.rotate(random(-0.18, 0.18));
-
+ 
   // 1. Render heavy underwater base support shadow strokes using a dense dark pink hue
   oilyStroke(paintingLayer, 0, 12 * scaleAmount, 82 * scaleAmount, 22 * scaleAmount, color(86, 26, 46, 115), 0, 0.75);
-
+ 
   // 2. Layer multi-tier centripetal Impressionist loose petals from the outer perimeter inward via polar coordinates
   for (let i = 0; i < 12; i++) {
     const angle = map(i, 0, 12, -PI * 0.9, PI * 0.9) + random(-0.16, 0.16);
@@ -628,15 +594,15 @@ function paintFlower(x, y, scaleAmount, baseColor) {
       angle * 0.45, 0.9
     );
   }
-
+ 
   // 3. Dot highly saturated pure yellows and light oranges in the core center to construct rich stamen textures
   for (let i = 0; i < 7; i++) {
     oilyStroke(paintingLayer, random(-10, 10) * scaleAmount, random(-5, 7) * scaleAmount, random(12, 28) * scaleAmount, random(5, 11) * scaleAmount, color(246, 217, 83, random(150, 225)), random(-0.5, 0.5), 0.9);
   }
-
+ 
   paintingLayer.pop();
 }
-
+ 
 function paintSurfaceStrokes() {
   // Generate classical short, high-contrast oil brush strokes scattered flat across the surface blending cool, warm, dark, and light hues
   for (let i = 0; i < 1250; i++) {
@@ -646,7 +612,7 @@ function paintSurfaceStrokes() {
     ]);
     oilyStroke(paintingLayer, random(ART_W), random(ART_H), random(8, 62), random(2, 10), c, random(-0.18, 0.18), random(0.35, 0.85));
   }
-
+ 
   // Overlay linear micro-scratch lines with high dry-brush textures to enhance horizontal visual tracking along the water plane
   for (let i = 0; i < 280; i++) {
     const x = random(ART_W);
@@ -656,13 +622,13 @@ function paintSurfaceStrokes() {
     paintingLayer.line(x, y, x + random(-12, 18), y + random(-4, 4));
   }
 }
-
+ 
 function paintFineColorNotes() {
   const notes = [
     color(207, 222, 204, 95), color(172, 198, 214, 85), color(233, 190, 207, 80),
     color(196, 207, 126, 80), color(84, 57, 93, 75), color(36, 52, 80, 80)
   ];
-
+ 
   // Incorporate Pointillism mechanics, loosely splattering delicate raw colors to create vibrant shimmering fields via retinal blending
   for (let i = 0; i < 760; i++) {
     const x = random(ART_W);
@@ -674,7 +640,7 @@ function paintFineColorNotes() {
       random(-0.28, 0.28), random(0.35, 0.75)
     );
   }
-
+ 
   // Choreograph radiant pure white / bright gold accent lines tracking across critical composition lines for sparkling reflections
   for (let i = 0; i < 95; i++) {
     const x = random(70, ART_W - 70);
@@ -684,7 +650,7 @@ function paintFineColorNotes() {
     paintingLayer.line(x, y, x + random(10, 48), y + random(-5, 5));
   }
 }
-
+ 
 function paintCanvasGrain() {
   paintingLayer.loadPixels();
   // Synthesize microscopic texture grain mimicking coarse linen canvas cross-weave structures pixel-by-pixel
@@ -700,14 +666,14 @@ function paintCanvasGrain() {
     }
   }
   paintingLayer.updatePixels();
-
+ 
   // Lastly, outline a dark, dense inner frame along the borders to cushion edge-stretching artifacts when inverse lookup algorithms execute
   paintingLayer.noFill();
   paintingLayer.stroke(28, 30, 38, 90);
   paintingLayer.strokeWeight(20);
   paintingLayer.rect(10, 10, ART_W - 20, ART_H - 20);
 }
-
+ 
 /**
  * Core Custom Lower-Level Brush Engine: Procedural Thick Oil Paint Brush Stroke
  * Operation: Through multi-pass envelope shape squeezing and high-frequency sinusoidal wobble noise, this function 
@@ -716,12 +682,12 @@ function paintCanvasGrain() {
 function oilyStroke(g, x, y, w, h, c, angle, opacity) {
   w *= BRUSH_SCALE;
   h *= BRUSH_SCALE;
-
+ 
   g.push();
   g.translate(x, y);
   g.rotate(angle);
   g.noStroke();
-
+ 
   // 1. Perform 5 layered rendering passes to simulate an impasto texture ranging from deep bases to dried, cracked top ridges
   const passes = 5;
   for (let i = 0; i < passes; i++) {
@@ -748,7 +714,7 @@ function oilyStroke(g, x, y, w, h, c, angle, opacity) {
     }
     g.endShape(CLOSE);
   }
-
+ 
   // 2. Score 2 fine horizontal lines across the stroke center using a brightened tint to manifest subtle stiff-bristle canvas grooves
   g.stroke(red(c) + 25, green(c) + 25, blue(c) + 20, alpha(c) * 0.3);
   g.strokeWeight(max(1, h * 0.08));
@@ -756,6 +722,6 @@ function oilyStroke(g, x, y, w, h, c, angle, opacity) {
     const yy = random(-h * 0.25, h * 0.25);
     g.line(-w * 0.42, yy, w * 0.42, yy + random(-h * 0.12, h * 0.12));
   }
-
+ 
   g.pop();
 }
