@@ -10,7 +10,7 @@
 const FLOW_NOISE_SCALE = 0.0035; // spatial frequency of the field; smaller = broader, calmer swirls
 const FLOW_NOISE_LAYERS = 2;     // number of fBm octaves summed in flowValue()
 const FLOW_SPEED = 0.0015;       // how fast the noise field drifts over time (z axis)
-const WARP_RES = 560;            // resolution of the square warp buffer (later stretched to artBox)
+const WARP_RES = 960; // was 560 — raise toward the art box's on-screen pixel size
 const FLOW_FIELD_GRID = 48;      // direction-grid resolution: one angle per cell, not per pixel
 const FLOW_AMP = 16;             // max pixel displacement of the warp
 const FLOW_SCROLL = 0.012;       // base scroll speed of the displacement phase
