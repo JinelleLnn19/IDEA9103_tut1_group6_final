@@ -25,7 +25,17 @@ let audioState = {
   lilyMotion: 0, // Overall lily movement from the sound
   bassMotion: 0, // Slower motion from the bass
   trebleMotion: 0, // Faster shimmer from the treble
-  visualActive: false // Keeps the visual layer alive between quiet moments
+  visualActive: false, // Keeps the visual layer alive between quiet moments
+  perlinDrive: 0, // Audio strength tuned for the Perlin water layer
+  perlinPulse: 0, // Peakier audio value for larger Perlin water rings
+  perlinBursts: [], // Larger sound-driven rings drawn into the Perlin overlay
+  perlinLastBurstFrame: -999, // Last frame that created a Perlin water burst
+  perlinLinked: false, // True once this file has wrapped the Perlin hooks
+  perlinRenderLinked: false, // True once renderFlowingWater is wrapped
+  perlinDropsLinked: false, // True once drawRaindrops is wrapped
+  padDance: 0, // Smoothed audio strength for floating lily-pad movement
+  padLift: 0, // Bass-heavy lift for brief flying motions
+  padLastFlightFrame: -999 // Last frame that kicked lily pads upward
 };
 
 // Lily overlay anchors: [x ratio, y ratio, size ratio]
@@ -79,18 +89,21 @@ function setupAudioMechanic() {
   // Build the UI and make sure the labels match the current state
   createAudioControls();
   updateAudioControls();
+  linkAudioToPerlinLayer();
 }
 
 // Called every frame to keep the audio visuals alive
 function updateAudioMechanic() {
   updateAudioAnalysis();
+  updateAudioPerlinMotion();
   maybeTriggerAudioRipple();
   updateAudioRipples();
   updateAudioLilyMovement();
+  updateAudioFloatingLilyPads();
 
-  // Share the smoothed level with the rest of the sketch if that global exists
+  // Share the Perlin-tuned level with the rest of the sketch if that global exists
   if (typeof audioLevel !== "undefined") {
-    audioLevel = audioState.smoothedLevel;
+    audioLevel = audioState.perlinDrive;
   }
 }
 
@@ -99,6 +112,295 @@ function drawAudioLayer() {
   drawActiveAudioPulse();
   drawAudioRipples();
   drawAudioLilyMovementLayer();
+}
+
+// Push the existing floating lily pads from this audio file only.
+function updateAudioFloatingLilyPads() {
+  if (typeof floatingLilyPads === "undefined" || !Array.isArray(floatingLilyPads) || floatingLilyPads.length === 0) {
+    return;
+  }
+
+  const isActive =
+    audioState.mode !== "none" ||
+    audioState.isFilePlaying ||
+    audioState.isMicStarted ||
+    audioState.visualActive;
+
+  const targetDance = isActive
+    ? constrain(audioState.smoothedLevel * 0.62 + audioState.bassEnergy * 0.36 + audioState.trebleEnergy * 0.24, 0, 1)
+    : 0;
+  const targetLift = isActive
+    ? constrain(audioState.bassEnergy * 0.74 + audioState.smoothedLevel * 0.32, 0, 1)
+    : 0;
+
+  audioState.padDance = lerp(audioState.padDance, targetDance, targetDance > audioState.padDance ? 0.18 : 0.06);
+  audioState.padLift = lerp(audioState.padLift, targetLift, targetLift > audioState.padLift ? 0.16 : 0.08);
+
+  if (audioState.padDance < 0.01 || (typeof inputCtrl !== "undefined" && inputCtrl && inputCtrl.isStilled)) {
+    return;
+  }
+
+  applyAudioPadFlutter();
+  maybeTriggerAudioPadFlight();
+}
+
+// Add continuous shiver and small dancing currents to every floating lily pad.
+function applyAudioPadFlutter() {
+  const dance = constrain(audioState.padDance, 0, 1);
+  const lift = constrain(audioState.padLift, 0, 1);
+  const treble = constrain(audioState.trebleMotion, 0, 1);
+
+  for (let i = 0; i < floatingLilyPads.length; i++) {
+    const pad = floatingLilyPads[i];
+    const phase = typeof pad.phase === "number" ? pad.phase : i * 0.73;
+    const flutter = sin(frameCount * (0.07 + treble * 0.18) + phase * 1.9 + i * 0.41);
+    const sway = cos(frameCount * (0.045 + dance * 0.1) + phase + i * 0.67);
+    const liftWave = sin(frameCount * 0.058 + phase * 2.1);
+
+    pad.vx += flutter * (0.012 + dance * 0.055 + treble * 0.028);
+    pad.vy += sway * (0.008 + treble * 0.035) - lift * (0.012 + max(0, liftWave) * 0.026);
+    pad.angularV += sin(frameCount * 0.12 + phase + i) * (0.00016 + dance * 0.0009 + treble * 0.00055);
+
+    pad.vx = constrain(pad.vx, -2.4, 2.4);
+    pad.vy = constrain(pad.vy, -2.4, 2.4);
+    pad.angularV = constrain(pad.angularV, -0.035, 0.035);
+  }
+}
+
+// Strong bass hits make a group of pads briefly leap before normal physics pulls them back.
+function maybeTriggerAudioPadFlight() {
+  const flightStrength = constrain(audioState.padLift * 0.72 + audioState.bassEnergy * 0.35, 0, 1);
+  const cooldown = floor(map(flightStrength, 0.28, 1, 32, 12, true));
+
+  if (flightStrength < 0.28 || frameCount - audioState.padLastFlightFrame <= cooldown) {
+    return;
+  }
+
+  const impulse = 0.28 + flightStrength * 0.52;
+  for (let i = 0; i < floatingLilyPads.length; i++) {
+    const pad = floatingLilyPads[i];
+    const phase = typeof pad.phase === "number" ? pad.phase : i * 0.73;
+    const selector = sin(frameCount * 0.19 + i * 1.37 + phase);
+
+    if (selector < -0.18) {
+      continue;
+    }
+
+    const angle = phase + frameCount * 0.025 + i * 0.43;
+    pad.vx += cos(angle) * impulse * 0.42;
+    pad.vy -= impulse * (0.48 + max(0, sin(angle * 1.7)) * 0.22);
+    pad.angularV += sin(angle) * flightStrength * 0.006;
+
+    pad.vx = constrain(pad.vx, -2.4, 2.4);
+    pad.vy = constrain(pad.vy, -2.4, 2.4);
+    pad.angularV = constrain(pad.angularV, -0.035, 0.035);
+  }
+
+  audioState.padLastFlightFrame = frameCount;
+}
+
+// Patch into the Perlin layer from here so the Perlin file itself stays untouched.
+function linkAudioToPerlinLayer() {
+  if (audioState.perlinLinked) {
+    return;
+  }
+
+  if (typeof renderFlowingWater === "function") {
+    const originalRenderFlowingWater = renderFlowingWater;
+    renderFlowingWater = function () {
+      applyAudioPerlinDriveToGlobals();
+      return originalRenderFlowingWater.apply(this, arguments);
+    };
+    audioState.perlinRenderLinked = true;
+  }
+
+  if (typeof drawRaindrops === "function") {
+    const originalDrawRaindrops = drawRaindrops;
+    drawRaindrops = function (g) {
+      applyAudioPerlinDriveToGlobals();
+      originalDrawRaindrops.apply(this, arguments);
+      drawAudioPerlinBursts(g);
+    };
+    audioState.perlinDropsLinked = true;
+  }
+
+  audioState.perlinLinked = audioState.perlinRenderLinked || audioState.perlinDropsLinked;
+}
+
+// Convert raw audio analysis into a water-focused drive value.
+function updateAudioPerlinMotion() {
+  if (!audioState.perlinLinked) {
+    linkAudioToPerlinLayer();
+  }
+
+  const targetDrive = getAudioPerlinDriveTarget();
+  const driveEase = targetDrive > audioState.perlinDrive ? 0.18 : 0.055;
+  audioState.perlinDrive = lerp(audioState.perlinDrive, targetDrive, driveEase);
+
+  const targetPulse = constrain(
+    audioState.bassEnergy * 0.72 + audioState.smoothedLevel * 0.46 + audioState.trebleEnergy * 0.14,
+    0,
+    1
+  );
+  const pulseEase = targetPulse > audioState.perlinPulse ? 0.2 : 0.08;
+  audioState.perlinPulse = lerp(audioState.perlinPulse, targetPulse, pulseEase);
+
+  maybeTriggerAudioPerlinBurst();
+}
+
+// Bass and volume push the pond; treble adds a small current-like lift.
+function getAudioPerlinDriveTarget() {
+  const isActive =
+    audioState.mode !== "none" ||
+    audioState.isFilePlaying ||
+    audioState.isMicStarted ||
+    audioState.visualActive;
+
+  if (!isActive) {
+    return 0;
+  }
+
+  const fileLift = audioState.mode === "file" && audioState.isFilePlaying ? 0.04 : 0;
+  return constrain(
+    fileLift + audioState.smoothedLevel * 0.7 + audioState.bassEnergy * 0.45 + audioState.trebleEnergy * 0.2,
+    0,
+    1
+  );
+}
+
+// Feed the Perlin globals right before the Perlin layer renders a frame.
+function applyAudioPerlinDriveToGlobals() {
+  const drive = Number.isFinite(audioState.perlinDrive) ? constrain(audioState.perlinDrive, 0, 1) : 0;
+
+  if (typeof audioLevel !== "undefined") {
+    const currentLevel = Number.isFinite(audioLevel) ? audioLevel : 0;
+    audioLevel = max(currentLevel, drive);
+  }
+
+  if (drive < 0.002) {
+    return;
+  }
+
+  if (typeof flowZ !== "undefined") {
+    flowZ += drive * 0.00075 + audioState.bassMotion * 0.00045;
+  }
+
+  if (typeof flowPhase !== "undefined") {
+    flowPhase += drive * 0.0035 + audioState.trebleMotion * 0.0018;
+  }
+}
+
+// Add larger rings to the Perlin overlay on musical hits.
+function maybeTriggerAudioPerlinBurst() {
+  if (audioState.mode === "none" || !audioState.visualActive) {
+    return;
+  }
+
+  const burstStrength = constrain(
+    audioState.perlinPulse * 0.72 + audioState.bassEnergy * 0.42 + audioState.smoothedLevel * 0.25,
+    0,
+    1
+  );
+  const cooldown = floor(map(burstStrength, 0.18, 1, 34, 10, true));
+
+  if (burstStrength > 0.18 && frameCount - audioState.perlinLastBurstFrame > cooldown) {
+    createAudioPerlinBurst(burstStrength);
+    if (burstStrength > 0.58) {
+      createAudioPerlinBurst(burstStrength * 0.74);
+    }
+    audioState.perlinLastBurstFrame = frameCount;
+  }
+}
+
+// Store a large water ring in artwork coordinates, so it sits inside flowLayer.
+function createAudioPerlinBurst(strength) {
+  if (typeof ART_W === "undefined" || typeof ART_H === "undefined") {
+    return;
+  }
+
+  const safeStrength = constrain(strength, 0, 1);
+  const position = randomAudioPerlinWaterPosition();
+  audioState.perlinBursts.push({
+    x: position.x,
+    y: position.y,
+    age: 0,
+    life: floor(30 + safeStrength * 28),
+    maxRadius: 42 + safeStrength * 145 + audioState.bassEnergy * 68,
+    alpha: 70 + safeStrength * 105,
+    strokeWeight: 0.75 + safeStrength * 2.2,
+    phase: random(TWO_PI)
+  });
+
+  if (audioState.perlinBursts.length > 12) {
+    audioState.perlinBursts.splice(0, audioState.perlinBursts.length - 12);
+  }
+}
+
+// Prefer actual water pixels when the Perlin layer exposes its classifier.
+function randomAudioPerlinWaterPosition() {
+  const artW = typeof ART_W !== "undefined" ? ART_W : 1000;
+  const artH = typeof ART_H !== "undefined" ? ART_H : 1000;
+  let fallback = {
+    x: artW * random(0.08, 0.92),
+    y: artH * random(0.18, 0.92)
+  };
+
+  for (let i = 0; i < 10; i++) {
+    const x = artW * random(0.08, 0.92);
+    const y = artH * random(0.16, 0.94);
+    fallback = { x: x, y: y };
+
+    if (typeof pixelIsWater !== "function" || pixelIsWater(x, y)) {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
+// Draw and age audio-made rings inside the same buffer as the Perlin raindrops.
+function drawAudioPerlinBursts(g) {
+  if (!g || audioState.perlinBursts.length === 0) {
+    return;
+  }
+
+  g.push();
+  g.noFill();
+  g.blendMode(SCREEN);
+
+  for (let i = audioState.perlinBursts.length - 1; i >= 0; i--) {
+    const burst = audioState.perlinBursts[i];
+    const t = constrain(burst.age / burst.life, 0, 1);
+    const ease = 1 - Math.pow(1 - t, 2);
+    const fade = Math.pow(1 - t, 1.35);
+    const radius = burst.maxRadius * ease;
+    const wobble = sin(frameCount * 0.03 + burst.phase) * burst.maxRadius * 0.035;
+    const ringRadius = max(0, radius + wobble);
+    const alpha = burst.alpha * fade;
+
+    g.stroke(220, 244, 255, alpha * 0.72);
+    g.strokeWeight(max(0.45, burst.strokeWeight * (1 - t * 0.35)));
+    g.ellipse(burst.x, burst.y, ringRadius * 2.35, ringRadius * 0.74);
+
+    g.stroke(255, 236, 196, alpha * 0.32);
+    g.strokeWeight(max(0.3, burst.strokeWeight * 0.45));
+    g.ellipse(burst.x, burst.y, ringRadius * 2.95, ringRadius * 0.94);
+
+    if (t < 0.16) {
+      g.noStroke();
+      g.fill(236, 248, 255, alpha * (1 - t / 0.16) * 0.42);
+      g.circle(burst.x, burst.y, 5 + audioState.perlinPulse * 8);
+      g.noFill();
+    }
+
+    burst.age++;
+    if (burst.age > burst.life) {
+      audioState.perlinBursts.splice(i, 1);
+    }
+  }
+
+  g.blendMode(BLEND);
+  g.pop();
 }
 
 // Start the built-in track and use it as the audio source
@@ -139,6 +441,7 @@ function startBuiltInAudio() {
   if (!wasAlreadyPlaying) {
     // Give the first click an immediate ripple
     createAudioRipple(width * 0.5, height * 0.58, 0.07, 0.12, 0.06);
+    createAudioPerlinBurst(0.32);
     audioState.lastTriggerFrame = frameCount;
   }
 
