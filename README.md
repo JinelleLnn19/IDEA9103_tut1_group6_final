@@ -118,11 +118,61 @@ Responsible for implementing the mouse and keyboard interaction system. Mouse mo
 </li>
 
 <h2>AI acknowledgement</h2>
+<p>
+Several AI tools assisted with this project. Their roles are described below, along with how the resulting code works. Every AI-assisted section is also marked with inline comments in the code itself.
+</p>
 
+<li>
+<strong>ChatGPT</strong> — assisted with the interaction and physics code, and acted as a code-review and documentation aid. It helped generate the responsive canvas layout (an "object-fit: cover"-style scale-and-centre calculation that fills any window without distorting the artwork), the pixel-displacement step that applies active ripples to the water surface by reading and rewriting the pixel buffer, and the floating lily-pad physics: spawning the pads, advancing their velocity and rotation each frame, resolving pad-to-pad collisions, and applying blended repulsion and wave-push forces from nearby ripples. It was also used to check for syntax errors and to help document parts of the project. How it works: each ripple carries a position, radius, alpha and impact value; every frame the code measures a pad's distance to each ripple, converts that into a force along the unit direction vector, and adds it to the pad's linear and angular velocity, producing believable drifting and spin.
+</li>
+
+<li>
+<strong>Gemini</strong> — assisted with the user-input interaction module. It helped generate the ripple data structures and physics parameters, the per-frame loop that grows each ripple's radius and fades its alpha (then removes dead particles), the spacebar "stilled" state that freezes the surface and rapidly fades existing ripples, the mouse handlers that spawn faint trail ripples on movement and strong shockwave ripples on click, and the number-key switching between the Dawn, Noon and Dusk palettes. How it works: an array of ripple objects is updated every frame; new objects are pushed on input, each ages by growing its radius and subtracting its alpha, and is removed once fully faded, while a boolean flag short-circuits the loop whenever the spacebar is held.
+</li>
+
+<li>
+<strong>Claude</strong> — assisted with a performance pass on the Perlin-noise water layer. Because the underlying painting never changes, it helped precompute a static water mask (each non-water pixel is written into the warp buffer only once, so the per-frame loop visits water pixels only), replace per-pixel trigonometry with cos/sin lookup tables for the flow-direction grid, and add small numerical-safety guards (such as ignoring a non-finite audio value so it cannot corrupt the animation phase). How it works: these changes do not alter the visuals; they cut per-frame cost by moving fixed work (water classification, trigonometry, constant multiplications) out of the hot pixel loop into one-time setup and flat typed arrays.
+</li>
 
 <h2>External references</h2>
 <li>
-Refik Anadol. (n.d.). Datafall: Akbank. https://refikanadol.com/works/datafall-akbank/
+The Coding Train. (n.d.). Coding Challenge 102: 2D Water Ripple. https://thecodingtrain.com/challenges/102-2d-water-ripple
+<br>Influenced the pixel-based water-ripple displacement: active ripples read and rewrite the water pixel buffer to distort the surface.
+</li>
+
+<li>
+The Coding Train. (n.d.). Coding Challenge 78: Simple Particle System. https://thecodingtrain.com/challenges/78-simple-particle-system
+<br>Basis for the ripple particle system in the user-input module: an array of independent particle objects, each created on input and removed once its life (alpha) runs out.
+</li>
+
+<li>
+Shiffman, D. (n.d.). The Nature of Code: Vectors, Oscillation, Forces. https://natureofcode.com/vectors/ , https://natureofcode.com/oscillation/ , https://natureofcode.com/forces/
+<br>Influenced the floating lily-pad physics: vector normalization for direction, oscillation/wave behaviour for the ripple push, and impulse/torque for changing a pad's linear and angular velocity.
+</li>
+
+<li>
+Hobbs, T. (2020). Flow Fields. https://www.tylerxhobbs.com/words/flow-fields (p5.js walkthrough: The Coding Train, Perlin Noise Flow Field, https://www.youtube.com/watch?v=BjoM9oKOAKY)
+<br>Basis for the flow field in the Perlin water layer: a noise value is mapped to a flow angle on a direction grid that steers the water warp.
+</li>
+
+<li>
+Gonzalez Vivo, P., & Lowe, J. (n.d.). The Book of Shaders, Ch. 13: Fractal Brownian Motion. https://thebookofshaders.com/13/ (see also Quilez, I., fBm, https://iquilezles.org/articles/fbm/)
+<br>Basis for the fractal (fBm) noise in the Perlin water layer, which sums octaves of Perlin noise at decreasing amplitude and increasing frequency for a more detailed field.
+</li>
+
+<li>
+Vlachos, A. (Valve). (2010). Water Flow in Portal 2 [SIGGRAPH 2010 talk]. https://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf (walkthrough: Catlike Coding, Texture Distortion, https://catlikecoding.com/unity/tutorials/flow/texture-distortion/)
+<br>Basis for the two-phase flow-map blend in the Perlin water layer, which cross-fades two displacement phases offset by half a cycle so the looping warp has no visible reset seam.
+</li>
+
+<li>
+MDN Web Docs. (n.d.). CanvasRenderingContext2D: globalCompositeOperation. https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation
+<br>Source for the "destination-out" trail fade in the Perlin water layer, which subtracts alpha each frame so ripple trails dissolve cleanly instead of being painted over with black.
+</li>
+
+<li>
+The Book of Shaders. (n.d.). Glossary: smoothstep. https://thebookofshaders.com/glossary/?search=smoothstep
+<br>Source for the smoothstep easing used in the time-based mechanic to soften transitions.
 </li>
 
 <h2>Interaction instructions</h2>
