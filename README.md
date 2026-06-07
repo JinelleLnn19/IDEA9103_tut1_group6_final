@@ -135,7 +135,7 @@ Several AI tools assisted with this project. Their roles are described below, al
 </li>
 
 <h2>External references</h2>
-<p><strong>Techniques borrowed or adapted from external sources (also commented in the code):</strong></p>
+<p><strong>Techniques borrowed or adapted from external sources:</strong></p>
 <li>
 The Coding Train. (n.d.). Coding Challenge 102: 2D Water Ripple. https://thecodingtrain.com/challenges/102-2d-water-ripple
 <br>Influenced the pixel-based water-ripple displacement: active ripples read and rewrite the water pixel buffer to distort the surface.
