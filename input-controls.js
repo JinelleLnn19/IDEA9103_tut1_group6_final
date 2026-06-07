@@ -9,9 +9,9 @@ class InputController {
     // --- Interaction Physics Parameters ---
     this.triggerRadius = 75;      // Physics threshold radius: pixel range for mouse repulsion and ripple distortion effects
     this.rippleDecay = 2.5;       // Alpha decay rate per frame for strong ripples (ensures complete fade-out in ~2 seconds)
+    // This technique is from https://natureofcode.com/oscillation/#spring-forces.
     this.springConstant = 0.05;   // Spring constant (k): simulates the physical restoration tendency of the distorted water surface
     this.damping = 0.88;          // Physical damping coefficient: attenuates ripple energy to prevent infinite oscillation
-    // This technique is from https://natureofcode.com/oscillation/#spring-forces.
   }
 
   /**
@@ -131,7 +131,7 @@ class InputController {
    * Mouse movement / click on the water surface interaction event (Simulates ripple waves pushing floating lily pads)
    * This code was generated with assistance from ChatGPT
    * @see {@link https://natureofcode.com/vectors/} For vector normalization and movement.
-   * @see {@link https://natureofcode.com/oscillation/} For sinusoidal wave propagation.
+   * @see {@link https://natureofcode.com/autonomous-agents/} For sinusoidal wave propagation.
    * @see {@link https://natureofcode.com/forces/} For impulse and torque injection.
    * Operation: Read active particles out of inputCtrl, calculate distances to vector sources, and compound direct repel collisions with wave-propagating thrusts
    * @param {Object} pad - The floating lily pad physics object to apply forces to
