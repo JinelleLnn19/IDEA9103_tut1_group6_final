@@ -98,22 +98,22 @@ loadSound() is used to load the built-in audio file for the project.  This suppo
 
 <h2>Mechanic ownership</h2>
 <li>
-<strong>Jingrou Lin — Time-based Mechanic<strong><br>  
+<strong>Jingrou Lin — Time-based Mechanic</strong><br>  
 Responsible for implementing the scene's day–night cycle system. The cycle runs on a 60-second loop, during which the visual atmosphere transitions smoothly through dawn, noon, sunset, and night phases. Key responsibilities include: layering time-driven atmospheric tints across the full canvas with phase-specific blend modes (Soft Light, Multiply, Screen); rendering a moving light beam that travels from left to right and shifts in colour temperature throughout the cycle; generating water-surface reflection lines anchored to the light source position; applying proximity-based highlight pulses to lily and flower positions; and rendering fish rim lights accompanied by subtle oscillating swim animations. All visual layers share a single time-state object, ensuring cohesive cycle synchronisation across the entire scene.
 </li>
 
 <li>
-<strong>Jinge Gao — Perlin Noise + Randomness Mechanic<strong><br> 
+<strong>Jinge Gao — Perlin Noise + Randomness Mechanic</strong><br> 
 Responsible for implementing the flowing water distortion system. A fractional Brownian motion (fBm) noise field drives a 48×48 direction grid, which displaces water pixels via two-tap flowmap blending across offset phases — producing seamless, looping fluid motion with no visible discontinuity. Key responsibilities include: rendering a lower-resolution warp buffer with a precomputed static water mask (non-water pixels are written once and never revisited); managing the lifecycle of procedurally spawned raindrop ring animations with water-surface detection; and exposing an interface that maps incoming audio level to flow-scroll speed acceleration. Non-water regions (lily pads, blossoms) are excluded from distortion via a colour-heuristic classification function.
 </li>
 
 <li>
-<strong>Yuchong Xue — Audio Mechanic<strong><br>  
+<strong>Yuchong Xue — Audio Mechanic</strong><br>  
 Responsible for implementing the audio-reactive visual system. The mechanic supports two input modes — built-in MP3 playback and live microphone input — and uses FFT spectrum analysis to extract per-frame bass energy, treble energy, and overall amplitude, with exponential smoothing applied to all values. Key responsibilities include: threshold- and cooldown-gated audio ripple generation positioned randomly across the pond area; audio-driven flutter and impulse forces applied to floating lily pad physics; a non-invasive hook-based integration with the Perlin water layer that modulates scroll speed and raindrop spawn rate according to audio intensity; and a compact DOM-based audio control UI supporting play/pause and microphone toggle.
 </li>
 
 <li>
-<strong>Kaylin Zhang — User Input Mechanic<strong><br>  
+<strong>Kaylin Zhang — User Input Mechanic</strong><br>  
 Responsible for implementing the mouse and keyboard interaction system. Mouse movement generates subtle capillary-wave trail particles on the water surface, while mouse clicks inject high-energy shockwave particles simulating a stone dropped into water. Each ripple is an independent particle object with configurable growth rate, alpha decay, stroke weight, and impact force. Key responsibilities include: applying blended direct-repulsion and wave-peak-aligned thrust forces from active ripple particles to floating lily pad physics objects; a spacebar-held "stilled" state that suspends new ripple spawning and accelerates the decay of existing ripples; number-key palette switching (Dawn / Noon / Dusk); and inverse-transform coordinate mapping to guarantee pixel-accurate ripple alignment across variable canvas scales and offsets.
 </li>
 
