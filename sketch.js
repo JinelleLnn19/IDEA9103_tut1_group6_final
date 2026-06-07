@@ -113,6 +113,7 @@ function draw() {
 /**
  * Underlying Fluid Simulation Core Algorithm: Inverse Pixel Lookup Mapping & Temporal Color Filtering
  * [Outside-of-Course Technique Description]: This method utilizes advanced pixel-level matrix manipulation (Direct Pixel Manipulation).
+ * This technique is from https://p5js.org/reference/p5/pixels/ , https://thecodingtrain.com/challenges/102-2d-water-ripple.
  * Instead of using conventional GPU geometric mesh deformations, the algorithm iterates through every single pixel of the interactiveBuffer.
  * It inversely calculates its physical distance to all active ripple generation sources. It uses a sine function (sin) to simulate the 
  * oscillatory decay of water waves, yielding pixel offsets (xOffset, yOffset). It then grabs the corresponding RGBA color from the original 
@@ -379,6 +380,7 @@ function drawLilyPadTo(g, x, y, w, h, angle, alphaScale) {
  * createGraphics buffers during initialization, permanently baking each leaf layout into a static texture map. At runtime, 
  * it renders via hardware-accelerated image blitting and matrix translation, drastically freeing up CPU cycles during 
  * collision resolution, enabling hundreds of premium painted leaves to glide seamlessly at 60 FPS.
+ * This technique is from https://p5js.org/reference/p5/createGraphics/ , https://processing.org/reference/PGraphics.html.
  */
 function createFloatingLilyPads() {
   floatingLilyPads = [];

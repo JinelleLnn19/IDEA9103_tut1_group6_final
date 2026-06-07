@@ -72,6 +72,7 @@ class InputController {
       
       // [Technical Source & Details]: Divide the preset stroke weight by the current scaleFactor,
       // thereby counteracting the visual stroke thickening caused by p5.js canvas scaling, maintaining a sharp retina-level fidelity.
+      // This technique is from https://p5js.org/reference/p5/strokeWeight/.
       strokeWeight(r.strokeW / scaleFactor); 
       ellipse(r.x, r.y, r.radius * 2); // Draw the circular wave pattern
     }

@@ -1,3 +1,18 @@
+/*
+  AI note: I used ChatGPT to help check this file for possible syntax mistakes
+  and to help me describe the audio logic in clearer comments. The AI was used
+  like a reviewer, not as a replacement for understanding the code.
+
+  Source note: The p5 sound parts were guided by official p5.js references:
+  loadSound(), p5.AudioIn, p5.FFT, p5.Amplitude, and userStartAudio().
+  Main links:
+  https://p5js.org/reference/p5/loadSound/
+  https://p5js.org/reference/p5.sound/p5.AudioIn/
+  https://p5js.org/reference/p5.sound/p5.FFT/
+  https://p5js.org/reference/p5.sound/p5.Amplitude/
+  https://p5js.org/reference/p5/userStartAudio/
+*/
+
 // Built-in track for the audio mode
 const BUILT_IN_AUDIO_PATH = "Akini Jing - Peacock Feather Fatality.mp3";
 
@@ -51,7 +66,7 @@ const AUDIO_LILY_OVERLAY_POINTS = [
   [0.85, 0.83, 0.95]
 ];
 
-// Load the track early, during p5's preload step
+// Source: p5 loadSound() docs show using preload plus success/error callbacks for a sound file.
 function preloadAudioMechanic() {
   // p5 calls one callback if the file loads, and the other if it fails
   audioState.soundFile = loadSound(
@@ -70,7 +85,7 @@ function preloadAudioMechanic() {
   );
 }
 
-// Set up the mic, analyzers, and the little control bar
+// Source: p5.AudioIn, p5.FFT, and p5.Amplitude docs helped the setup of mic, frequency, and volume readers.
 function setupAudioMechanic() {
   // p5's mic input object
   audioState.mic = new p5.AudioIn();
@@ -200,6 +215,8 @@ function maybeTriggerAudioPadFlight() {
 }
 
 // Patch into the Perlin layer from here so the Perlin file itself stays untouched.
+// Technique reference: MDN Function.apply(), used here to call the original function with same this/arguments.
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply
 function linkAudioToPerlinLayer() {
   if (audioState.perlinLinked) {
     return;
@@ -700,7 +717,7 @@ function drawAudioLilyMovementLayer() {
   pop();
 }
 
-// Turn the current audio input into numbers the visuals can use
+// Source: p5.FFT docs say analyze() should run before getEnergy(), and waveform() gives samples for RMS.
 function updateAudioAnalysis() {
   // With no source, ease everything back down to silence.
   if (!audioState.fft || audioState.mode === "none") {
@@ -828,7 +845,11 @@ function getAudioArtBox() {
   };
 }
 
-// Build the small audio controls in the top-left corner
+// Source: p5 DOM reference for createDiv(), createButton(), createSpan(), and mousePressed() event handlers.
+// https://p5js.org/reference/p5/createDiv/
+// https://p5js.org/reference/p5/createButton/
+// https://p5js.org/reference/p5/createSpan/
+// https://p5js.org/reference/p5.Element/mousePressed/
 function createAudioControls() {
   // Remove the old controls if setup runs again.
   if (audioState.controls) {
