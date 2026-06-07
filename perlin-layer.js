@@ -10,7 +10,7 @@
 const FLOW_NOISE_SCALE = 0.0035; // spatial frequency of the field; smaller = broader, calmer swirls
 const FLOW_NOISE_LAYERS = 2;     // number of fBm octaves summed in flowValue()
 const FLOW_SPEED = 0.0015;       // how fast the noise field drifts over time (z axis)
-const WARP_RES = 560;            // resolution of the square warp buffer (later stretched to artBox)
+const WARP_RES = 960; // was 560 — raise toward the art box's on-screen pixel size
 const FLOW_FIELD_GRID = 48;      // direction-grid resolution: one angle per cell, not per pixel
 const FLOW_AMP = 16;             // max pixel displacement of the warp
 const FLOW_SCROLL = 0.012;       // base scroll speed of the displacement phase
@@ -152,6 +152,10 @@ function renderFlowingWater() {
   // Two-tap flowmap blend: sample the painting at two displacement phases half a
   // cycle apart and cross-fade between them. As phase0 wraps 1 -> 0 the two taps
   // line up, so the looping displacement has no visible jump.
+  // Reference (technique beyond course basics) — two-phase flow-map blend that
+  // hides the scroll/reset seam, from Alex Vlachos (Valve), "Water Flow in Portal 2",
+  // SIGGRAPH 2010: https://advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf
+  // Walkthrough of the half-period blend: https://catlikecoding.com/unity/tutorials/flow/texture-distortion/
   const phase0 = flowPhase - Math.floor(flowPhase);
   const phase1 = (phase0 + 0.5) % 1;
   const blend = Math.abs(1 - 2 * phase0);
@@ -203,6 +207,10 @@ function buildFlowGrid() {
   // Coarse 48x48 direction grid: one flow angle per cell sampled from the noise
   // field, rebuilt each frame so the field animates. Sampling per cell rather
   // than per pixel is what keeps the warp cheap enough to run every frame.
+  // Reference (technique beyond course basics) — flow field: map a noise value to
+  // an angle per grid cell to steer motion. Tyler Hobbs, "Flow Fields":
+  // https://www.tylerxhobbs.com/words/flow-fields  (p5.js walkthrough — The Coding
+  // Train, "Perlin Noise Flow Field": https://www.youtube.com/watch?v=BjoM9oKOAKY)
   const gridSize = FLOW_FIELD_GRID;
   const n = gridSize * gridSize;
   if (!cosGrid) {
@@ -234,6 +242,9 @@ function updateFlowLayer() {
 
   // Fade the trail layer by erasing a little alpha each frame: "destination-out"
   // subtracts opacity instead of painting black, so old trails dissolve cleanly.
+  // Reference (technique beyond course basics) — Canvas 2D "destination-out"
+  // compositing subtracts alpha (fade-to-clear trails). MDN:
+  // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation
   flowLayer.push();
   flowLayer.drawingContext.globalCompositeOperation = "destination-out";
   flowLayer.noStroke();
@@ -252,6 +263,9 @@ function updateFlowLayer() {
 function flowValue(x, y) {
   // Fractional Brownian motion: sum FLOW_NOISE_LAYERS octaves of Perlin noise,
   // each at half the amplitude and double the frequency, then normalise to 0..1.
+  // Reference (technique beyond course basics) — fractional Brownian motion
+  // (fractal noise): summing octaves of Perlin noise. The Book of Shaders, ch.13:
+  // https://thebookofshaders.com/13/  (see also https://iquilezles.org/articles/fbm/)
   let sum = 0;
   let amp = 1;
   let freq = 1;
