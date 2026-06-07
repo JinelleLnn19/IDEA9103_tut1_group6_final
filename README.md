@@ -126,3 +126,24 @@ Refik Anadol. (n.d.). Datafall: Akbank. https://refikanadol.com/works/datafall-a
 </li>
 
 <h2>Interaction instructions</h2>
+<p>
+This project has several interaction behaviours. The main idea is that the Monet-inspired pond is not only a still image, but a living water surface. The user can see time passing, make ripples by mouse, change colour feeling by keyboard, and also let music or real environmental sound affect the water.
+</p>
+
+<li>
+<strong>Still state and keyboard interaction</strong><br>
+When the user does not touch the mouse, the canvas still keeps moving slowly by itself. In <code>time-based.js</code>, the artwork has a one-minute time cycle. During this cycle, a soft simulated sunlight beam moves slowly from the left side of the canvas to the right side. The colour atmosphere of the pond and water lilies also changes gradually, so the image can feel like moving from morning, daytime, sunset, and night, then looping again.
+At the same time, <code>perlin-layer.js</code> creates a restless water flow effect, so the pond surface does not look completely frozen. The keyboard interaction is mainly connected through <code>input-controls.js</code> and <code>sketch.js</code>. Pressing number keys <code>1</code>, <code>2</code>, and <code>3</code> changes the colour palette of the interactive water distortion, showing different visual moods such as dawn, noon, and dusk. Holding the <code>Space</code> key changes the scene into a stilled state. In this state, new mouse ripples stop appearing and the existing ripples fade faster, so the pond becomes calmer.
+</li>
+
+<li>
+<strong>Mouse movement and mouse click interaction</strong><br>
+The mouse interaction is mainly controlled by <code>input-controls.js</code>, while <code>sketch.js</code> receives the real mouse events and sends the corrected canvas position to the controller. When the user moves the mouse across the canvas, small and light ripple trails appear on the water. This gives the feeling that the mouse is gently touching the pond surface. When the user clicks the mouse, a stronger circular ripple spreads outward, like dropping a small stone into water.
+These ripples are also used in the water distortion calculation in <code>sketch.js</code>. The pixels near the ripple ring are pushed slightly, so the image looks like a moving water surface. The floating lily pad elements can also receive force from the active ripples, so they have small position or rotation changes instead of staying completely fixed.
+</li>
+
+<li>
+<strong>Music and real sound interaction</strong><br>
+The audio interaction is mainly handled in <code>audio-mechanic.js</code>. There are two audio buttons in the top-left corner of the canvas. If the user clicks <code>Play audio</code>, the built-in music file starts to play in a loop. While the music is playing, the program analyses the sound level and frequency energy, then creates water ripples and small movement changes that follow the rhythm of the music.
+If the user clicks <code>Use mic</code>, the project connects to the system microphone. After browser permission is allowed, the pond reacts to the sound in the real room, such as speaking, clapping, or background noise. Louder or stronger sound can make the water ripple more actively. This makes the artwork feel connected to the present environment, not only to the preloaded music.
+</li>
