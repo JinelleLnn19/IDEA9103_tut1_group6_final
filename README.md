@@ -135,6 +135,7 @@ Several AI tools assisted with this project. Their roles are described below, al
 </li>
 
 <h2>External references</h2>
+<p><strong>Techniques borrowed or adapted from external sources (also commented in the code):</strong></p>
 <li>
 The Coding Train. (n.d.). Coding Challenge 102: 2D Water Ripple. https://thecodingtrain.com/challenges/102-2d-water-ripple
 <br>Influenced the pixel-based water-ripple displacement: active ripples read and rewrite the water pixel buffer to distort the surface.
@@ -173,6 +174,92 @@ MDN Web Docs. (n.d.). CanvasRenderingContext2D: globalCompositeOperation. https:
 <li>
 The Book of Shaders. (n.d.). Glossary: smoothstep. https://thebookofshaders.com/glossary/?search=smoothstep
 <br>Source for the smoothstep easing used in the time-based mechanic to soften transitions.
+</li>
+
+<p><strong>Official documentation referenced for built-in p5.js / library functions used:</strong></p>
+<li>
+p5.js: translate() and scale(). https://p5js.org/reference/p5/translate/ , https://p5js.org/reference/p5/scale/
+<br>Re-mapping the canvas origin and scale so ripples stay aligned across screen sizes (user-input module).
+</li>
+
+<li>
+p5.js: strokeWeight(). https://p5js.org/reference/p5/strokeWeight/
+<br>Dividing the line width by the scale factor so ripple strokes stay crisp when the canvas is scaled (user-input module).
+</li>
+
+<li>
+p5.js: pixels[] / loadPixels() / updatePixels(). https://p5js.org/reference/p5/pixels/
+<br>Direct pixel-buffer access used for the water displacement (sketch.js).
+</li>
+
+<li>
+p5.js: createGraphics() — https://p5js.org/reference/p5/createGraphics/ ; Processing: PGraphics — https://processing.org/reference/PGraphics.html
+<br>Off-screen buffers used to cache the floating lily-pad sprites (sketch.js).
+</li>
+
+<li>
+p5.js: millis(). https://p5js.org/reference/p5/millis/
+<br>Timing the one-minute day-night cycle (time-based mechanic).
+</li>
+
+<li>
+p5.js: lerp() — https://p5js.org/reference/p5/lerp/ ; lerpColor() — https://p5js.org/reference/p5/lerpColor/
+<br>Smooth value and colour transitions across the cycle (time-based mechanic).
+</li>
+
+<li>
+p5.js: sin(). https://p5js.org/reference/p5/sin/
+<br>Oscillating light and motion over time (time-based mechanic).
+</li>
+
+<li>
+p5.js: blendMode(). https://beta.p5js.org/reference/p5/blendmode/
+<br>Phase-specific atmospheric tints layered over the canvas (time-based mechanic).
+</li>
+
+<li>
+p5.js: drawingContext — https://p5js.org/reference/p5/drawingContext/ ; MDN: CanvasRenderingContext2D.filter — https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
+<br>Canvas blur applied to the soft light beam (time-based mechanic).
+</li>
+
+<li>
+p5.js: loadSound(). https://p5js.org/reference/p5/loadSound/
+<br>Loading the built-in soundtrack (audio mechanic).
+</li>
+
+<li>
+p5.js: p5.AudioIn. https://p5js.org/reference/p5.sound/p5.AudioIn/
+<br>Live microphone input (audio mechanic).
+</li>
+
+<li>
+p5.js: p5.FFT. https://p5js.org/reference/p5.sound/p5.FFT/
+<br>Per-frame frequency (bass / treble) analysis (audio mechanic).
+</li>
+
+<li>
+p5.js: p5.Amplitude. https://p5js.org/reference/p5.sound/p5.Amplitude/
+<br>Overall loudness measurement (audio mechanic).
+</li>
+
+<li>
+p5.js: userStartAudio(). https://p5js.org/reference/p5/userStartAudio/
+<br>Starting the audio context on a user gesture (audio mechanic).
+</li>
+
+<li>
+p5.js: createDiv() / createButton() / createSpan(). https://p5js.org/reference/p5/createDiv/ , https://p5js.org/reference/p5/createButton/ , https://p5js.org/reference/p5/createSpan/
+<br>The DOM-based audio control UI (audio mechanic).
+</li>
+
+<li>
+p5.js: p5.Element.mousePressed(). https://p5js.org/reference/p5.Element/mousePressed/
+<br>Handling clicks on the audio-control buttons (audio mechanic).
+</li>
+
+<li>
+MDN Web Docs: Function.prototype.apply(). https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply
+<br>Calling a function with an array of arguments (audio mechanic).
 </li>
 
 <h2>Interaction instructions</h2>
