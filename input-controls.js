@@ -7,11 +7,11 @@ class InputController {
     this.currentPalette = 2;      // Color palette index preset: 1 = Dawn, 2 = Noon, 3 = Dusk
 
     // --- Interaction Physics Parameters ---
-    // This technique is from https://natureofcode.com/oscillation/#spring-forces.
     this.triggerRadius = 75;      // Physics threshold radius: pixel range for mouse repulsion and ripple distortion effects
     this.rippleDecay = 2.5;       // Alpha decay rate per frame for strong ripples (ensures complete fade-out in ~2 seconds)
     this.springConstant = 0.05;   // Spring constant (k): simulates the physical restoration tendency of the distorted water surface
     this.damping = 0.88;          // Physical damping coefficient: attenuates ripple energy to prevent infinite oscillation
+    // This technique is from https://natureofcode.com/oscillation/#spring-forces.
   }
 
   /**
@@ -21,7 +21,6 @@ class InputController {
   update() {
     // This code was generated with the assistance of Gemini
     // Execution: Monitor the keyboard Spacebar hold state in real-time to drive the surface freeze state machine
-    // This technique is from https://thecodingtrain.com/challenges/78-simple-particle-system.
     if (keyIsPressed && key === ' ') {
       this.isStilled = true;
     } else {
@@ -31,6 +30,7 @@ class InputController {
     if (this.isStilled) {
       // This code was generated with the assistance of Gemini
       // Execution: Loop through the array backwards to accelerate the alpha decay of existing ripples during the frozen state
+      // This technique is from https://thecodingtrain.com/challenges/78-simple-particle-system.
       for (let i = this.ripples.length - 1; i >= 0; i--) {
         this.ripples[i].alpha -= 10; 
         if (this.ripples[i].alpha <= 0) this.ripples.splice(i, 1); // Safely remove dead particles to free up memory
@@ -130,7 +130,9 @@ class InputController {
   /**
    * Mouse movement / click on the water surface interaction event (Simulates ripple waves pushing floating lily pads)
    * This code was generated with assistance from ChatGPT
-   * This technique is from https://natureofcode.com/forces/.
+   * @see {@link https://natureofcode.com/vectors/} For vector normalization and movement.
+   * @see {@link https://natureofcode.com/oscillation/} For sinusoidal wave propagation.
+   * @see {@link https://natureofcode.com/forces/} For impulse and torque injection.
    * Operation: Read active particles out of inputCtrl, calculate distances to vector sources, and compound direct repel collisions with wave-propagating thrusts
    * @param {Object} pad - The floating lily pad physics object to apply forces to
    */
