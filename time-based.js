@@ -8,6 +8,8 @@ const cycleDuration = 60000;
 // and 1 means the end of the cycle.
 // After 60 seconds, millis() % cycleDuration returns to 0,
 // so the whole time system can loop again.
+// This timing method is based on the p5.js millis() reference:
+// https://p5js.org/reference/p5/millis/
 function getCycleProgress() {
   return (millis() % cycleDuration) / cycleDuration;
 }
@@ -22,6 +24,9 @@ function getTimeBasedState() {
   // These colours represent the main moments in one day.
   // They are not used as hard changes.
   // They will be blended smoothly later, so the atmosphere changes naturally.
+  // The colour transition is influenced by p5.js lerpColor(), which blends
+  // between two p5.Color values by an amount from 0 to 1:
+  // https://p5js.org/reference/p5/lerpColor/
   const dawn = color(112, 132, 171);
   const day = color(216, 229, 210);
   const sunset = color(220, 130, 104);
@@ -64,11 +69,16 @@ function getTimeBasedState() {
   // The light source moves from the left side to the right side.
   // I use values slightly outside the canvas range, from -0.12 to 1.12,
   // so the light can enter and leave the scene more naturally.
+  // The lerp() idea is from p5.js reference, used here for a simple number
+  // interpolation from left side to right side:
+  // https://p5js.org/reference/p5/lerp/
   const lightX = lerp(-0.12, 1.12, cycleProgress);
 
   // The light height changes a little with a sine curve.
   // This makes the light feel like it is following a soft arc in the sky,
   // instead of moving in a flat and mechanical line.
+  // I used p5.js sin() reference for this wave-like movement:
+  // https://p5js.org/reference/p5/sin/
   const lightY = 0.28 - sin(cycleProgress * PI) * 0.22;
 
   // Return all calculated values as one object.
@@ -124,6 +134,9 @@ function drawAtmosphereTint(artBox, state) {
   // SOFT_LIGHT is used to make the colour blend more gently.
   // This is useful because Monet's painting style is soft and atmospheric,
   // not sharp or flat.
+  // This blend layer is influenced by the p5.js blendMode() reference.
+  // The reference explains how SCREEN, MULTIPLY and SOFT_LIGHT combine pixels:
+  // https://beta.p5js.org/reference/p5/blendmode/
   blendMode(SOFT_LIGHT);
 
   // Dawn has warm but soft light.
@@ -209,6 +222,10 @@ function drawSoftLightBeam(artBox, state) {
 
   // drawingContext is used here to add blur.
   // Blur makes the light softer and more like reflected light on water.
+  // p5.js drawingContext gives access to the CanvasRenderingContext2D object:
+  // https://p5js.org/reference/p5/drawingContext/
+  // The blur filter technique is referenced from MDN Canvas filter property:
+  // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter
   drawingContext.save();
   drawingContext.filter = `blur(${max(22, artBox.w * 0.035)}px)`;
 
@@ -427,6 +444,10 @@ function phaseAmount(progress, start, end, peak) {
 // Smoothstep creates smoother transition than a normal linear value.
 // It makes the start and end of a transition softer,
 // so colour and light changes do not feel too sudden.
+// This formula is referenced from The Book of Shaders smoothstep glossary:
+// https://thebookofshaders.com/glossary/?search=smoothstep
+// I use the same Hermite-style curve idea, but in this project it is only for
+// fading time phases, not for making a shader.
 function smoothstep(t) {
   const clamped = constrain(t, 0, 1);
   return clamped * clamped * (3 - 2 * clamped);
@@ -440,3 +461,22 @@ function randomSeededWave(index, progress, minValue, maxValue) {
   const raw = (sin(index * 12.9898 + progress * TWO_PI) + 1) * 0.5;
   return lerp(minValue, maxValue, raw);
 }
+
+// Academic honesty / AI use note:
+// This file was checked with the help of ChatGPT. I used it mainly to review
+// whether the time-based code has obvious syntax problems and whether the
+// comments explain the logic clearly. The visual idea and the final code choices
+// are still my project work; ChatGPT did not add a new interaction system here.
+// The main code works by reading p5.js running time, converting it into a
+// repeating 0-1 progress value, and then using this value to control colour,
+// light position, reflection, lily highlights, and fish rim lights.
+
+// Reference note:
+// I used p5.js official references to support the timing and interpolation ideas:
+// millis(): https://p5js.org/reference/p5/millis/
+// lerp(): https://p5js.org/reference/p5/lerp/
+// lerpColor(): https://p5js.org/reference/p5/lerpColor/
+// sin(): https://p5js.org/reference/p5/sin/
+// blendMode(): https://beta.p5js.org/reference/p5/blendmode/
+// These pages did not give me this exact artwork code, but they influenced how
+// I used time, colour blending, wave movement, and screen/multiply layers.
