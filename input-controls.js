@@ -7,6 +7,7 @@ class InputController {
     this.currentPalette = 2;      // Color palette index preset: 1 = Dawn, 2 = Noon, 3 = Dusk
 
     // --- Interaction Physics Parameters ---
+    // This technique is from https://natureofcode.com/oscillation/#spring-forces.
     this.triggerRadius = 75;      // Physics threshold radius: pixel range for mouse repulsion and ripple distortion effects
     this.rippleDecay = 2.5;       // Alpha decay rate per frame for strong ripples (ensures complete fade-out in ~2 seconds)
     this.springConstant = 0.05;   // Spring constant (k): simulates the physical restoration tendency of the distorted water surface
@@ -20,6 +21,7 @@ class InputController {
   update() {
     // This code was generated with the assistance of Gemini
     // Execution: Monitor the keyboard Spacebar hold state in real-time to drive the surface freeze state machine
+    // This technique is from https://thecodingtrain.com/challenges/78-simple-particle-system.
     if (keyIsPressed && key === ' ') {
       this.isStilled = true;
     } else {
@@ -62,8 +64,8 @@ class InputController {
 
     push();
     // Absolute screen coordinates must be inversely re-mapped via translate() and scale() to guarantee perfect pixel alignment across various screen resolutions.
-    translate(offsetX, offsetY);
-    scale(scaleFactor);
+    translate(offsetX, offsetY); // This technique is from https://p5js.org/reference/p5/translate/.
+    scale(scaleFactor); // This technique is from https://p5js.org/reference/p5/scale/.
     
     noFill(); // Ripples are rendered as outlines only
     for (let r of this.ripples) {
@@ -128,6 +130,7 @@ class InputController {
   /**
    * Mouse movement / click on the water surface interaction event (Simulates ripple waves pushing floating lily pads)
    * This code was generated with assistance from ChatGPT
+   * This technique is from https://natureofcode.com/forces/.
    * Operation: Read active particles out of inputCtrl, calculate distances to vector sources, and compound direct repel collisions with wave-propagating thrusts
    * @param {Object} pad - The floating lily pad physics object to apply forces to
    */
