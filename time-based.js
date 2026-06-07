@@ -52,12 +52,14 @@ function getTimeBasedState() {
     phaseAmount(cycleProgress, 0, 0.08, 0.02)
   );
 
-  // daylight becomes lower when the cycle moves into night.
-  // This can help other parts know whether the scene should feel bright or dark.
+  // daylight represents an overall brightness value.
+  // It becomes lower as the scene approaches night.
+  // At the moment, it is stored as part of the shared time state
+  // for possible future visual adjustments.
   const daylight = 1 - phaseAmount(cycleProgress, 0.62, 0.96, 0.82);
 
-  // warmLight is stronger during dawn and sunset.
-  // These are the moments when the light should feel orange, pink, and golden.
+  // warmLight becomes stronger during dawn and sunset.
+  // It is used as a general intensity value for warmer lighting effects.
   const warmLight = phaseAmount(cycleProgress, 0.02, 0.22, 0.1) + phaseAmount(cycleProgress, 0.45, 0.68, 0.58);
 
   // These amounts are used to describe different phases.
@@ -146,7 +148,7 @@ function drawAtmosphereTint(artBox, state) {
     rect(artBox.x, artBox.y, artBox.w, artBox.h);
   }
 
-  // Noon is brighter and more green-blue.
+  // Noon is brighter and slightly green.
   // I keep it gentle because the painting should still feel calm.
   if (state.noonAmount > 0.01) {
     fill(218, 238, 217, 26 * state.noonAmount);
@@ -215,7 +217,7 @@ function drawSoftLightBeam(artBox, state) {
   const beamTilt = lerp(-0.18, 0.16, state.cycleProgress);
 
   // The beam centre also moves slightly up and down.
-  // This gives the reflection a water-like feeling.
+  // This prevents the light from feeling mechanically fixed.
   const beamCenterY = artBox.y + artBox.h * 0.52 + sin(state.cycleProgress * TWO_PI) * artBox.h * 0.035;
 
   blendMode(SCREEN);
@@ -234,8 +236,9 @@ function drawSoftLightBeam(artBox, state) {
   rotate(beamTilt);
   rectMode(CENTER);
 
-  // Draw several rectangles on top of each other.
-  // Larger rectangles are more transparent, so the beam has a soft glowing edge.
+  // Several rectangles are layered together.
+  // The larger outer rectangles use lower opacity,
+  // helping create a soft glowing edge.
   for (let i = 5; i > 0; i--) {
     const t = i / 5;
     fill(red(lightColor), green(lightColor), blue(lightColor), beamAlpha * (1 - t * 0.38));
@@ -352,8 +355,8 @@ function drawLilyLightNotes(artBox, state) {
 // The fish are dark, so this helps them remain visible,
 // especially during sunset and night.
 function drawFishRimLights(artBox, state) {
-  // These are relative fish positions.
-  // They are not fully animated fish here, but light notes that suggest movement under water.
+  // These are simplified fish elements.
+  // They use subtle motion and lighting rather than full character animation.
   const fish = [
     [0.26, 0.59, 0.9],
     [0.46, 0.48, 0.68],
@@ -463,10 +466,10 @@ function randomSeededWave(index, progress, minValue, maxValue) {
 }
 
 // Academic honesty / AI use note:
-// This file was checked with the help of ChatGPT. I used it mainly to review
-// whether the time-based code has obvious syntax problems and whether the
-// comments explain the logic clearly. The visual idea and the final code choices
-// are still my project work; ChatGPT did not add a new interaction system here.
+// ChatGPT was used as a code review and documentation assistant.
+// It helped check syntax, explain logic, and improve comment clarity.
+// The overall concept, visual design decisions, and final implementation
+// were developed and selected by the author.
 // The main code works by reading p5.js running time, converting it into a
 // repeating 0-1 progress value, and then using this value to control colour,
 // light position, reflection, lily highlights, and fish rim lights.
